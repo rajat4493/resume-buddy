@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 
@@ -8,121 +8,112 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  // Handle PDF file upload and extract text from backend
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const res = await fetch("http://localhost:8000/upload", {
         method: "POST",
         body: formData,
       });
-
-      if (!res.ok) throw new Error("Upload failed");
-
       const data = await res.json();
       setResume(data.extracted_text || "");
     } catch (error) {
-      alert("Failed to upload file: " + error);
+      alert("File upload failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // Send resume text + job description to backend for analysis
-  const handleSubmit = async () => {
-    if (!resume || !job) {
-      alert("Please provide both resume text and job description.");
-      return;
-    }
+  const handleAnalyze = async () => {
+    if (!resume || !job) return alert("Paste resume and job description.");
     setLoading(true);
-
     try {
       const res = await fetch("http://localhost:8000/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume_text: resume, job_description: job }),
       });
-
-      if (!res.ok) throw new Error("Analysis failed");
-
       const data = await res.json();
       setResult(data);
-    } catch (error) {
-      alert("Failed to analyze: " + error);
+    } catch (e) {
+      alert("Analysis failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="p-4 max-w-xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">AI Resume Matcher</h1>
+    <main className="min-h-screen bg-zinc-950 text-white px-6 py-12 flex flex-col items-center font-sans">
+      {/* Hero Header */}
+      <header className="mb-16 text-center">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+          Resume Match & Tailor AI
+        </h1>
+        <p className="text-zinc-400 mt-4 max-w-xl mx-auto text-lg">
+          Upload or paste your resume, enter a job description, and get a tailored resume + cover letter with a match score — powered by AI.
+        </p>
+      </header>
 
-      <label className="block font-semibold">
-        Upload Resume PDF (optional)
+      {/* Upload + Textareas */}
+      <section className="w-full max-w-3xl space-y-6 bg-zinc-900 p-8 rounded-xl shadow-lg border border-zinc-700">
         <input
           type="file"
           accept="application/pdf"
           onChange={handleFileChange}
-          className="block mt-2"
-          disabled={loading}
+          className="w-full bg-zinc-800 text-white border border-zinc-600 rounded p-3 file:bg-zinc-700 file:text-white"
         />
-      </label>
 
-      <label className="block font-semibold">
-        Or Paste Your Resume Text
         <textarea
-          placeholder="Paste your resume here..."
-          className="w-full border rounded p-2 mt-1"
-          rows={6}
           value={resume}
           onChange={(e) => setResume(e.target.value)}
-          disabled={loading}
-        />
-      </label>
-
-      <label className="block font-semibold">
-        Paste Job Description
-        <textarea
-          placeholder="Paste the job description here..."
-          className="w-full border rounded p-2 mt-1"
           rows={6}
+          placeholder="Paste your resume text"
+          className="w-full bg-zinc-800 text-white border border-zinc-600 rounded p-3 placeholder-zinc-400"
+        />
+
+        <textarea
           value={job}
           onChange={(e) => setJob(e.target.value)}
-          disabled={loading}
+          rows={6}
+          placeholder="Paste job description"
+          className="w-full bg-zinc-800 text-white border border-zinc-600 rounded p-3 placeholder-zinc-400"
         />
-      </label>
 
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {loading ? "Processing..." : "Analyze"}
-      </button>
+        <button
+          onClick={handleAnalyze}
+          disabled={loading}
+          className="w-full py-3 bg-white text-black font-semibold rounded hover:bg-gray-100 transition"
+        >
+          {loading ? "Analyzing..." : "Analyze"}
+        </button>
+      </section>
 
+      {/* Results Section */}
       {result && (
-        <section className="mt-6 space-y-4 p-4 border rounded bg-gray-50">
-          <p>
-            <strong>Match Score:</strong> {result.match_score}%
-          </p>
+        <section className="w-full max-w-4xl mt-12 space-y-8 bg-zinc-900 p-8 rounded-xl border border-zinc-700 shadow-md">
+          <h2 className="text-2xl font-semibold text-green-400">
+            Match Score: {result.match_score}%
+          </h2>
+
           <div>
-            <strong>Tailored Resume:</strong>
-            <p className="whitespace-pre-wrap mt-1">{result.tailored_resume}</p>
+            <h3 className="text-lg font-bold mb-2">Tailored Resume</h3>
+            <pre className="whitespace-pre-wrap text-sm text-zinc-300">
+              {result.tailored_resume}
+            </pre>
           </div>
+
           <div>
-            <strong>Cover Letter:</strong>
-            <p className="whitespace-pre-wrap mt-1">{result.cover_letter}</p>
+            <h3 className="text-lg font-bold mb-2">Cover Letter</h3>
+            <pre className="whitespace-pre-wrap text-sm text-zinc-300">
+              {result.cover_letter}
+            </pre>
           </div>
         </section>
       )}
     </main>
   );
 }
-
