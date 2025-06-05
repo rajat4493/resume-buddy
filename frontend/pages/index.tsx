@@ -15,14 +15,24 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+  
       const res = await fetch("http://localhost:8000/upload", {
         method: "POST",
         body: formData,
       });
+  
+      if (!res.ok) {
+        const err = await res.text(); // fallback to plain text
+        console.error("Upload failed response:", err);
+        alert("File upload failed: " + err);
+        return;
+      }
+  
       const data = await res.json();
       setResume(data.extracted_text || "");
-    } catch (error) {
-      alert("File upload failed");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      alert("File upload failed: " + error.message);
     } finally {
       setLoading(false);
     }
